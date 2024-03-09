@@ -2,6 +2,7 @@
 #include <math.h>
 #include <final_rover/armClient.h>
 #include <final_rover/encodersFeedback.h>
+#include <std_msgs/Float32.h>
 
 #define motor1_pwm 9
 #define motor2_pwm 8
@@ -9,6 +10,8 @@
 #define motor1_dir 45
 #define motor2_dir 41  
 #define motor_base_dir 49
+
+#define moisture A0
 
 #define diff1_pwm 13
 #define diff2_pwm 11
@@ -75,6 +78,8 @@ float pitch=0;
 int gripper=0;
 char command = 'c';
 
+float moisture_percentage = 0;
+
 ros::NodeHandle nh;
 
 void subCb(const final_rover::armClient &msg) {
@@ -86,7 +91,9 @@ void subCb(const final_rover::armClient &msg) {
 }
 
 final_rover::encodersFeedback angleFeedback;
-ros::Publisher pub("/angle_feedback_server", &angleFeedback);
+ros::Publisher pub_angle("/angle_feedback_server", &angleFeedback);
+std_msgs::Float32 moistureMsg;
+ros::Publisher pub_moisture("/moisture_feedback", &moistureMsg);
 ros::Subscriber<final_rover::armClient> sub("/arm_controller_server", &subCb);
 unsigned long last_published=millis();
 
@@ -120,6 +127,8 @@ void setup() {
   pinMode(motor2_dir, OUTPUT);
   pinMode(motor_base_dir, OUTPUT);
 
+  pinMode(moisture, INPUT);
+
   pinMode(diff1_pwm, OUTPUT);
   pinMode(diff2_pwm, OUTPUT);
   pinMode(diff1_dir, OUTPUT);
@@ -146,7 +155,8 @@ void setup() {
 
   nh.getHardware()->setBaud(115200);
   nh.initNode();
-  nh.advertise(pub);
+  nh.advertise(pub_angle);
+  nh.advertise(pub_moisture);
   nh.subscribe(sub);
   last_published = millis();
 
@@ -159,8 +169,15 @@ void loop() {
     angleFeedback.first = angle_first;
     angleFeedback.second = angle_second;
     // angleFeedback.base = angle_base;
-    pub.publish(&angleFeedback);
+    pub_angle.publish(&angleFeedback);
+    moistureMsg.data = moisture_percentage;
+    pub_moisture.publish(&moistureMsg);
   }
+////////////////////////////////////////////////////////////////////////////////////
+
+  int sensor_analog;
+  sensor_analog = analogRead(moisture);
+  moisture_percentage = ( 100 - ( (sensor_analog/1023.00) * 100 ) );
 
 ///////////////////////////////////////////////////////////////////////////////////
   yaw_angle = 0.25*(angle_diff1 - angle_diff2);
@@ -247,16 +264,16 @@ void loop() {
 
   if(gripper == 1) {
     digitalWrite(grip_dir, LOW);
-    digitalWrite(grip_pwm, HIGH);
+    analogWrite(grip_pwm, 255);
   }
 
   if(gripper == -1) {
     digitalWrite(grip_dir, HIGH);
-    digitalWrite(grip_pwm, HIGH);
+    analogWrite(grip_pwm, 255);
   }
 
   if(gripper == 0) {
-    digitalWrite(grip_pwm, LOW);
+    analogWrite(grip_pwm, 0);
   }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 

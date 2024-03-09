@@ -14,7 +14,7 @@
 
 #define stepsPerRevolution 200
 
-Stepper myStepper(stepsPerRevolution, 8, 9, 10, 11);
+Stepper myStepper(stepsPerRevolution, 35, 31, 27, 23);
 
 ros::NodeHandle nh;
 
@@ -53,7 +53,7 @@ void setup() {
   nh.subscribe(sub_rover);
   nh.subscribe(sub_science);
 
-  myStepper.setSpeed(60);
+  myStepper.setSpeed(30);
 }
 
 void loop() {
@@ -81,15 +81,24 @@ void loop() {
   analogWrite(speed_l2, (abs(left) < 255)? abs(left) : 255);
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
-  if(isPrev == true && steps == 0) {
-    isPrev == false;
-  }
-  if(isPrev == false && steps != 0){
+  if(steps != 0) {
     myStepper.step(steps);
-    delay(500);
-    isPrev = true;
+    delay(1000);
   }
+
+  // char buffer[20];
+  // iota(left,buffer/10);
+
+  // nh.loginfo(" left  );
+  // char buffer1[20];
+  // char buffer2[20];
+  // itoa(left,buffer1,10);
+  // itoa(right,buffer2,10);
+
+  // char logmessage[150];
+  // snprintf(logmessage,sizeof(logmessage),"left : %s,right:%s",buffer1,buffer2);
+  // nh.loginfo(logmessage);
   nh.spinOnce();
   delay(1);
-
+  
 }
